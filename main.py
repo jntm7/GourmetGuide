@@ -60,6 +60,19 @@ class GetRecipe:
         self.results_text = tk.Text(self.root, height=20, width=100)
         self.results_text.pack()
 
+
+    def create_menu(self):
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        
+        file_menu.add_command(label="Save", command=self.save_recipes)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.root.quit)
+
+
     def search_recipes(self):
         cuisine_type = self.cuisine_var.get()
         meal_type = self.meal_var.get()
