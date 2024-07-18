@@ -11,8 +11,9 @@ class GetRecipe:
         self.root.geometry("900x675")
         self.root.resizable(False, False)
 
+        self.create_preferences()
 
-    def dropdown_menus(self):
+    def create_preferences(self):
 
         # Cuisine Type
         self.cuisine_label = tk.Label(self.root, text="Select Cuisine Type:")
@@ -50,6 +51,44 @@ class GetRecipe:
             "Snack",
         )
         self.meal_dropdown.pack()
+
+        # Search Button
+        self.search_button = tk.Button(self.root, text="Search", command=self.search_recipes)
+        self.search_button.pack()
+
+        # Display results
+        self.results_text = tk.Text(self.root, height=20, width=100)
+        self.results_text.pack()
+
+    def search_recipes(self):
+        cuisine_type = self.cuisine_var.get()
+        meal_type = self.meal_var.get()
+
+        if not cuisine_type or not meal_type:
+            messagebox.showerror("Error", "Please select both cuisine and meal type")
+            return
+
+        url = f'https://api.edamam.com/search?q={meal_type}&app_id={EDMAM_APPLICATION_ID}&app_key={EDMAM_APPLICATION_KEY}&cuisineType={cuisine_type}'
+
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            recipes = response.json().get('hits', [])
+            self.display_recipes(recipes)
+
+        else:
+            messagebox.showerror("Error: failed to fetch recipes.")
+
+    def display_recipes(self, recipes):
+        self.results_text.delete(1.0, tk.END)
+
+        for recipe in recipes:
+            recipe_data = recipe['recipe']
+            recipe_name = recipe_data['label']
+            ingredients = ', '.join(recipe_data['ingredientLines'])
+            calories = recipe_data['calories']
+
+            self.results_text.insert(tk.END, f"Recipe: {recipe_name}\nIngredients: {ingredients}\nCalories: {calories}\n\n")
 
 if __name__ == "__main__":
     root = tk.Tk()
