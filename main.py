@@ -2,12 +2,39 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import requests
 import json
-from config import EDMAM_API_ID, EDMAM_API_KEY
+from config import EDMAM_APPLICATION_ID, EDMAM_APPLICATION_KEY
 
 class GetRecipe:
     def __init__(self, root):
         self.root = root
         self.root.title("Gourmet Guide")
+        self.root.geometry("900x675")
+        self.root.resizable(False, False)
+
+
+    def dropdown_menus(self):
+        self.cuisine_label = tk.Label(self.root, text="Select Cuisine:")
+        self.cuisine_label.pack()
+        self.cuisine_var = tk.StringVar()
+        self.cuisine_dropdown = ttk.Combobox(self.root, textvariable=self.cuisine_var)
+        self.cuisine_dropdown['values'] = (
+            "American",
+            "British",
+            "Carribean",
+            "Chinese",
+            "French",
+            "Greek",
+            "Indian",
+            "Italian",
+            "Japanese",
+            "Korean",
+            "Mediterranean",
+            "Mexican",
+            "Middle Eastern",
+            "South American",
+            "South East Asian",
+        )
+
 
 
 if __name__ == "__main__":
