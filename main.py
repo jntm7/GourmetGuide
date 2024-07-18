@@ -1,109 +1,60 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import requests
 import json
 from config import EDMAM_APPLICATION_ID, EDMAM_APPLICATION_KEY
+from ctypes import windll
 
-class GetRecipe:
+from interface import GourmetGuideUI
+from menu import create_menu
+from search import search_recipes
+
+
+windll.shcore.SetProcessDpiAwareness(1)
+
+class GourmetGuideApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Gourmet Guide")
-        self.root.geometry("900x675")
-        self.root.resizable(False, False)
-
-        self.create_preferences()
-
-    def create_preferences(self):
-
-        # Cuisine Type
-        self.cuisine_label = tk.Label(self.root, text="Select Cuisine Type:")
-        self.cuisine_label.pack()
-        self.cuisine_var = tk.StringVar()
-        self.cuisine_dropdown = ttk.Combobox(self.root, textvariable=self.cuisine_var)
-        self.cuisine_dropdown['values'] = (
-            "American",
-            "British",
-            "Carribean",
-            "Chinese",
-            "French",
-            "Greek",
-            "Indian",
-            "Italian",
-            "Japanese",
-            "Korean",
-            "Mediterranean",
-            "Mexican",
-            "Middle Eastern",
-            "South American",
-            "South East Asian",
-        )
-        self.cuisine_dropdown.pack()
-
-        # Meal Type
-        self.meal_label = tk.Label(self.root, text="Select Meal Type:")
-        self.meal_label.pack()
-        self.meal_var = tk.StringVar()
-        self.meal_dropdown = ttk.Combobox(self.root, textvariable=self.meal_var)
-        self.meal_dropdown['values'] = (
-            "Breakfast",
-            "Lunch",
-            "Dinner",
-            "Snack",
-        )
-        self.meal_dropdown.pack()
-
-        # Search Button
-        self.search_button = tk.Button(self.root, text="Search", command=self.search_recipes)
-        self.search_button.pack()
-
-        # Display results
-        self.results_text = tk.Text(self.root, height=20, width=100)
-        self.results_text.pack()
-
-
-    def create_menu(self):
-        menubar = tk.Menu(self.root)
-        self.root.config(menu=menubar)
-        
-        file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="File", menu=file_menu)
-        
-        file_menu.add_command(label="Save", command=self.save_recipes)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
-
+        self.ui = GourmetGuideUI(root)
+        self.ui.bind_search_command(self.search_recipes)
+        create_menu(root, self.ui.save_recipes)
 
     def search_recipes(self):
-        cuisine_type = self.cuisine_var.get()
-        meal_type = self.meal_var.get()
+        cuisine_type = self.ui.cuisine_var.get()
+        meal_type = self.ui.meal_var.get()
 
         if not cuisine_type or not meal_type:
-            messagebox.showerror("Error", "Please select both cuisine and meal type")
+            messagebox.showinfo("Info", "Please select both Cuisine and Meal types.")
             return
 
-        url = f'https://api.edamam.com/search?q={meal_type}&app_id={EDMAM_APPLICATION_ID}&app_key={EDMAM_APPLICATION_KEY}&cuisineType={cuisine_type}'
-
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            recipes = response.json().get('hits', [])
-            self.display_recipes(recipes)
-
+        recipes = search_recipes(cuisine_type, meal_type)
+        
+        if recipes:
+            self.ui.display_recipes(recipes)
+        
         else:
-            messagebox.showerror("Error: failed to fetch recipes.")
+            messagebox.showinfo("Error", "Failed to retrieve recipes.")
 
-    def display_recipes(self, recipes):
-        self.results_text.delete(1.0, tk.END)
 
-        for recipe in recipes:
-            recipe_data = recipe['recipe']
-            recipe_name = recipe_data['label']
-            ingredients = ', '.join(recipe_data['ingredientLines'])
-            calories = recipe_data['calories']
-
-            self.results_text.insert(tk.END, f"Recipe: {recipe_name}\nIngredients: {ingredients}\nCalories: {calories}\n\n")
+    # Save Recipes
+    def save_recipes(self, recipes):
+        if not hasattr(self, 'recipes') or not self.recipes:
+            messagebox.showinfo("Info", "No recipes to save.")
+            return
+        
+        save_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
+        
+        if save_path:
+            with open(save_path, 'w') as f:
+                for recipe in self.recipes:
+                    recipe_data = recipe['recipe']
+                    recipe_name = recipe_data['label']
+                    ingredients = ', '.join(recipe_data['ingredientLines'])
+                    calories = recipe_data['calories']
+                    f.write(f"Recipe: {recipe_name}\nIngredients: {ingredients}\nCalories: {calories}\n\n")
+            messagebox.showinfo("Info", "Recipes saved successfully.")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = GetRecipe(root)
+    app = GourmetGuideApp(root)
     root.mainloop()
